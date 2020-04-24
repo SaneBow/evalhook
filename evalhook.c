@@ -65,34 +65,34 @@ static zend_op_array *evalhook_compile_string(zval *source_string, char *filenam
 	if (len > strlen(copy)) {
 		for (c=0; c<len; c++) if (copy[c] == 0) copy[c] == '?';
 	}
-	
-	php_printf("\n--------- Decrypt start ------------\n");
-	php_printf("\n>>> Filename: %s", filename);
-        php_printf(copy);
-        php_printf("\n--------- Decrypt done ------------\n");
-        return orig_compile_string(source_string, filename TSRMLS_CC);
 
-	/*
-	printf("Script tries to evaluate the following string.\n");
-	printf("----\n");
-	printf("%s\n", copy);
-	printf("----\nDo you want to allow execution? [y/N]\n");
-	
-	yes = 0;
-	while (1) {
-		c = getchar();
-		if (c == '\n') break;
-		if (c == 'y' || c == 'Y') {
-			yes = 1;
-		}
-    	}
+	char * fndec;
+	fndec = malloc(sizeof(char) * (strlen(filename) + 1));
+	strcpy(fndec, filename);
 
-	if (yes) {
-		return orig_compile_string(source_string, filename TSRMLS_CC);
+	const char deli[] = ".php";  
+    char *token;
+
+    token = strtok(fndec, deli);
+	strcat(token, ".dec.php");
+
+	// char *dir_name= "/tmp/evalhook/";
+	FILE *fp = NULL;
+	fp=fopen(fndec, "a+b");
+	if(fp!=NULL)
+	{
+		fprintf(fp, "\n--------- Decrypt start ------------\n");
+		fprintf(fp, "%s", copy);
+		fprintf(fp, "\n--------- Decrypt done ------------\n");
 	}
+	fclose(fp);
+
+	// php_printf("\n--------- Decrypt start ------------\n");
+	// php_printf("\n>>>> Filename: %s\n", filename);
+	// php_printf(copy);
+	// php_printf("\n--------- Decrypt done ------------\n");
 	
-	zend_error(E_ERROR, "evalhook: script abort due to disallowed eval()");
-	*/
+	return orig_compile_string(source_string, filename TSRMLS_CC);
 }
 
 
