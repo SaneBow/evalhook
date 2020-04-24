@@ -66,6 +66,13 @@ static zend_op_array *evalhook_compile_string(zval *source_string, char *filenam
 		for (c=0; c<len; c++) if (copy[c] == 0) copy[c] == '?';
 	}
 	
+	php_printf("\n--------- Decrypt start ------------\n");
+	php_printf("\n>>> Filename: %s", filename);
+        php_printf(copy);
+        php_printf("\n--------- Decrypt done ------------\n");
+        return orig_compile_string(source_string, filename TSRMLS_CC);
+
+	/*
 	printf("Script tries to evaluate the following string.\n");
 	printf("----\n");
 	printf("%s\n", copy);
@@ -78,13 +85,14 @@ static zend_op_array *evalhook_compile_string(zval *source_string, char *filenam
 		if (c == 'y' || c == 'Y') {
 			yes = 1;
 		}
-    }
+    	}
 
 	if (yes) {
 		return orig_compile_string(source_string, filename TSRMLS_CC);
 	}
 	
 	zend_error(E_ERROR, "evalhook: script abort due to disallowed eval()");
+	*/
 }
 
 
