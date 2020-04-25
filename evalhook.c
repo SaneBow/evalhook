@@ -53,7 +53,7 @@ static zend_bool evalhook_hooked = 0;
 static zend_op_array *evalhook_compile_string(zval *source_string, char *filename TSRMLS_DC)
 {
 	int c, len, yes;
-	char *copy;
+	char *source_copy;
 	
 	/* Ignore non string eval() */
 	if (Z_TYPE_P(source_string) != IS_STRING) {
@@ -61,36 +61,47 @@ static zend_op_array *evalhook_compile_string(zval *source_string, char *filenam
 	}
 	
 	len  = Z_STRLEN_P(source_string);
-	copy = estrndup(Z_STRVAL_P(source_string), len);
-	if (len > strlen(copy)) {
-		for (c=0; c<len; c++) if (copy[c] == 0) copy[c] == '?';
+	source_copy = estrndup(Z_STRVAL_P(source_string), len);
+	if (len > strlen(source_copy)) {
+		for (c=0; c<len; c++) if (source_copy[c] == 0) source_copy[c] == '?';
 	}
 
 	char * fndec;
-	fndec = malloc(sizeof(char) * (strlen(filename) + 1));
+	fndec = malloc(sizeof(char) * (strlen(filename) + 1 + 4));
 	strcpy(fndec, filename);
 
-	const char deli[] = ".php";  
-    char *token;
+	char *match;
+    match = strstr(fndec, ".php");
+    *match = '\0';
 
-    token = strtok(fndec, deli);
-	strcat(token, ".dec.php");
+	strcat(fndec, ".dec.php");
 
-	// char *dir_name= "/tmp/evalhook/";
 	FILE *fp = NULL;
+	long file_sz;
 	fp=fopen(fndec, "a+b");
+
+	free(fndec);
+
 	if(fp!=NULL)
 	{
-		fprintf(fp, "\n--------- Decrypt start ------------\n");
-		fprintf(fp, "%s", copy);
-		fprintf(fp, "\n--------- Decrypt done ------------\n");
+		fseek (fp, 0, SEEK_END);
+		file_sz = ftell (fp);
+		fseek (fp, 0, SEEK_SET);
+
+		char *buffer = malloc (file_sz + 1);
+		buffer[file_sz] = '\0';
+
+		if (fread (buffer, 1, file_sz, fp) == 0 || strstr(buffer, source_copy) == NULL) // no file content or no match
+		{
+			fprintf(fp, "\n// --------- Decrypt start ------------\n");
+			fprintf(fp, "%s", source_copy);
+			fprintf(fp, "\n// --------- Decrypt done ------------\n");
+		}
+
+		free(buffer);
 	}
 	fclose(fp);
 
-	// php_printf("\n--------- Decrypt start ------------\n");
-	// php_printf("\n>>>> Filename: %s\n", filename);
-	// php_printf(copy);
-	// php_printf("\n--------- Decrypt done ------------\n");
 	
 	return orig_compile_string(source_string, filename TSRMLS_CC);
 }
